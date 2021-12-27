@@ -1,5 +1,6 @@
-ansible-galaxy init was
+# ansible-galaxy init was
 
+# cp ./petclinic.war was/templaates/tomcat-users.j2 
 ===============
 vi was/vars/main.yml
 

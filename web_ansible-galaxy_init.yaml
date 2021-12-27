@@ -1,4 +1,4 @@
-ansible-galaxy init web
+# ansible-galaxy init web
 
 ===============
 vi web/vars/main.yml
