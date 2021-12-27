@@ -1,6 +1,6 @@
 # ansible-galaxy init was
 
-# cp ./petclinic.war was/templaates/tomcat-users.j2 
+# cp ./tomcat-users.xml was/templates/tomcat-users.j2 
 ===============
 vi was/vars/main.yml
 
@@ -10,17 +10,7 @@ item3: apache-tomcat
 
 ===============
 
-vi was/templates/tomcat-users.j2
-
-================
----
-- name: copy tomcat-users.xml
-  copy:
-    src: tomcat-users.j2
-    dest: /opt/tomcat/latest/conf/tomcat-users.xml
-================
-
-vi /was/handler/main.yml
+vi was/handler/main.yml
 
 ================
 - name: tomcat restart
@@ -40,25 +30,30 @@ vi was/tasks/main.yml
   apt:
     name: mysql-client-core-8.0
     state: present
+  tags: was1
 
 - name: apt install "{{ item2 }}"
   apt:
     name: "{{ item2 }}"
     state: present
+  tags: was2
 
 - name: groupadd "{{ item1 }}"
   command: "useradd -r -m -U -d /opt/tomcat -s /bin/false tomcat"
+  tags: was3
 
 - name: get_url ""{{ item3 }}""
   get_url:
     url: https://downloads.apache.org/tomcat/tomcat-9/v9.0.56/bin/apache-tomcat-9.0.56.tar.gz
     dest: /tmp
+  tags: was4
 
 - name: unarchive ""{{ item3 }}""
   unarchive:
     src: /tmp/apache-tomcat-9.0.56.tar.gz
     dest: /opt/tomcat
     remote_src: yes
+  tags: was5
 
 - name: link ""{{ item3 }}""
   file:
@@ -66,17 +61,21 @@ vi was/tasks/main.yml
     dest: /opt/tomcat/latest
     state: link
     owner: tomcat
+  tags: was6
 
 - name: chown "{{ item1 }}"
   shell: "chown -RH tomcat: /opt/tomcat/latest"
+  tags: was7
 
 - name: chmod + x
   shell: sh -c 'chmod +x /opt/tomcat/latest/bin/*.sh'
+  tags: was8
 
 - name: touch tomcat.service
   file:
     path: /etc/systemd/system/tomcat.service
     state: touch
+  tags: was9
 
 - name: edit tomcat.service
   blockinfile:
@@ -105,15 +104,24 @@ vi was/tasks/main.yml
 
       [Install]
       WantedBy=multi-user.target
+  tags: was10
+
+- name: copy tomcat-users.xml
+  template:
+    src: tomcat-users.j2
+    dest: /opt/tomcat/latest/conf/tomcat-users.xml
+  tags: was11
 
 - name: git clone petclinic.war
   command: "git clone https://github.com/holic1208/cont3"
+  tags: was12
 
 - name: copy petclinic.war
   copy:
     src: /home/ubuntu/cont3/petclinic.war      
     dest: /opt/tomcat/apache-tomcat-9.0.56/webapps/petclinic.war
     remote_src: yes
+  tags: was13
 
 - name: systemctl start "{{ item1 }}"
   systemd:
@@ -123,6 +131,7 @@ vi was/tasks/main.yml
       daemon_reload: yes
   notify:
     - tomcat restart
+  tags: was14
 ================
 
 vi was-ansible.yml

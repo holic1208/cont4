@@ -29,20 +29,24 @@ vi web/tasks/main.yml
   yum:
     name: "{{ item1 }}" 
     state: present
+  tags: web1
 
 - name: systemctl start "{{ item1 }}" 
   systemd:
     name: "{{ item1 }}" 
     state: started
     enabled: yes
+  tags: web2
 
 - name: touch health.html
   file:
     path: /var/www/html/health.html
     state: touch
+  tags: web3
 
 - name: copy httpd.conf
   command: 'cp /etc/httpd/conf/httpd.conf /etc/httpd/conf/httpd.conf.bak'
+  tags: web4
 
 - name: add config
   blockinfile:
@@ -56,6 +60,7 @@ vi web/tasks/main.yml
         </VirtualHost>
   notify:
     - httpd restart
+  tags: web5
 ================
 
 vi web-ansible.yml
