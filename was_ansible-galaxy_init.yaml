@@ -1,0 +1,134 @@
+ansible-galaxy init was
+
+===============
+vi was/vars/main.yml
+
+item1: tomcat
+item2: default-jdk
+item3: apache-tomcat
+
+===============
+
+vi was/templates/tomcat-users.j2
+
+================
+---
+- name: copy tomcat-users.xml
+  copy:
+    src: tomcat-users.j2
+    dest: /opt/tomcat/latest/conf/tomcat-users.xml
+================
+
+vi /was/handler/main.yml
+
+================
+- name: tomcat restart
+  systemd:
+    name: tomcat
+    state: restarted
+================
+
+
+vi was/tasks/main.yml
+================
+- name: apt update
+  apt:
+    update_cache: yes
+
+- name: apt install mysql
+  apt:
+    name: mysql-client-core-8.0
+    state: present
+
+- name: apt install "{{ item2 }}"
+  apt:
+    name: "{{ item2 }}"
+    state: present
+
+- name: groupadd "{{ item1 }}"
+  command: "useradd -r -m -U -d /opt/tomcat -s /bin/false tomcat"
+
+- name: get_url ""{{ item3 }}""
+  get_url:
+    url: https://downloads.apache.org/tomcat/tomcat-9/v9.0.56/bin/apache-tomcat-9.0.56.tar.gz
+    dest: /tmp
+
+- name: unarchive ""{{ item3 }}""
+  unarchive:
+    src: /tmp/apache-tomcat-9.0.56.tar.gz
+    dest: /opt/tomcat
+    remote_src: yes
+
+- name: link ""{{ item3 }}""
+  file:
+    src: /opt/tomcat/apache-tomcat-9.0.56
+    dest: /opt/tomcat/latest
+    state: link
+    owner: tomcat
+
+- name: chown "{{ item1 }}"
+  shell: "chown -RH tomcat: /opt/tomcat/latest"
+
+- name: chmod + x
+  shell: sh -c 'chmod +x /opt/tomcat/latest/bin/*.sh'
+
+- name: touch tomcat.service
+  file:
+    path: /etc/systemd/system/tomcat.service
+    state: touch
+
+- name: edit tomcat.service
+  blockinfile:
+    path: /etc/systemd/system/tomcat.service
+    block: |
+      [Unit]
+      Description=Tomcat 9 servlet container
+      After=network.target
+
+      [Service]
+      Type=forking
+
+      User=tomcat
+      Group=tomcat
+
+      Environment="JAVA_HOME=/usr/lib/jvm/default-java"
+      Environment="JAVA_OPTS=-Djava.security.egd=file:///dev/urandom -Djava.awt.headless=true"
+
+      Environment="CATALINA_BASE=/opt/tomcat/latest"
+      Environment="CATALINA_HOME=/opt/tomcat/latest"
+      Environment="CATALINA_PID=/opt/tomcat/latest/temp/tomcat.pid"
+      Environment="CATALINA_OPTS=-Xms512M -Xmx1024M -server -XX:+UseParallelGC"
+
+      ExecStart=/opt/tomcat/latest/bin/startup.sh
+      ExecStop=/opt/tomcat/latest/bin/shutdown.sh
+
+      [Install]
+      WantedBy=multi-user.target
+
+- name: git clone petclinic.war
+  command: "git clone https://github.com/holic1208/cont3"
+
+- name: copy petclinic.war
+  copy:
+    src: /home/ubuntu/cont3/petclinic.war      
+    dest: /opt/tomcat/apache-tomcat-9.0.56/webapps/petclinic.war
+    remote_src: yes
+
+- name: systemctl start "{{ item1 }}"
+  systemd:
+      name: "{{ item1 }}"
+      state: started
+      enabled: yes
+      daemon_reload: yes
+  notify:
+    - tomcat restart
+================
+
+vi was-ansible.yml
+================
+---
+- name: install was role
+  hosts: _co777_WASa, _co777_WASc
+  roles:
+    - was
+================

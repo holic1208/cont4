@@ -1,0 +1,68 @@
+ansible-galaxy init web
+
+===============
+vi web/vars/main.yml
+
+item1: httpd
+
+===============
+
+vi was/templates/tomcat-users.j2
+
+================
+
+================
+
+vi web/handler/main.yml
+
+================
+- name: httpd restart
+  systemd:
+    name: "{{ item1 }}" 
+    state: restarted
+================
+
+
+vi web/tasks/main.yml
+================
+- name: yum install "{{ item1 }}" 
+  yum:
+    name: "{{ item1 }}" 
+    state: present
+
+- name: systemctl start "{{ item1 }}" 
+  systemd:
+    name: "{{ item1 }}" 
+    state: started
+    enabled: yes
+
+- name: touch health.html
+  file:
+    path: /var/www/html/health.html
+    state: touch
+
+- name: copy httpd.conf
+  command: 'cp /etc/httpd/conf/httpd.conf /etc/httpd/conf/httpd.conf.bak'
+
+- name: add config
+  blockinfile:
+    path: /etc/httpd/conf/httpd.conf
+    block: |
+        LoadModule proxy_module modules/mod_proxy.so
+        LoadModule proxy_http_module modules/mod_proxy_http.so
+        <VirtualHost *:80>
+        ProxyPass / http://<nlb>:8080/
+        ProxyPassReverse  / http://<nlb>:8080/
+        </VirtualHost>
+  notify:
+    - httpd restart
+================
+
+vi web-ansible.yml
+================
+---
+- name: install web role
+  hosts: _co777_Weba, _co777_Webc
+  roles:
+    - web
+================
