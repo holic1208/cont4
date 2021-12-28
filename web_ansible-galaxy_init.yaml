@@ -1,17 +1,14 @@
 # ansible-galaxy init web
 
-===============
+
 vi web/vars/main.yml
+
+===============
 
 item1: httpd
 
 ===============
 
-vi was/templates/tomcat-users.j2
-
-================
-
-================
 
 vi web/handler/main.yml
 
